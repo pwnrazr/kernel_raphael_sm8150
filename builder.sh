@@ -10,6 +10,7 @@ kernel_dir="${PWD}"
 builddir="${kernel_dir}/Zip-out"
 last_commit=$(git rev-parse --verify --short=10 HEAD)
 kVersion="-${last_commit}"
+CUSTOM_ZIP_OUT_LOC="/mnt/phone_share/" # Unset if don't want to copy output zip to anywhere else
 
 # Arch and target image
 export ARCH="arm64"
@@ -22,7 +23,6 @@ CLANG="${CLANG_LOC}/bin:$PATH"
 CT_BIN="${CLANG}/bin/"
 CT="${CT_BIN}/clang"
 objdir="${kernel_dir}/out"
-#export THINLTO_CACHE=${PWD}/../thinlto_cache
 
 # Colors
 NC='\033[0m'
@@ -81,7 +81,7 @@ function parse_parameters()
 			"-n")
 				print $YEL "Input kernel name:";
 				read CUSTOM_NAME; CUSTOM_NAME="-$CUSTOM_NAME";;
-            *) screen "Invalid parameter specified!" ;;
+            		*) screen "Invalid parameter specified!" ;;
 		esac
 
 		shift
@@ -148,6 +148,7 @@ function make_image()
 
 	SUPPORTS_THINLTO_CLANG=$(grep CONFIG_ARCH_SUPPORTS_THINLTO ${objdir}/.config)
 	SUPPORTS_FULL_CLANG=$(grep CONFIG_ARCH_SUPPORTS_LTO_CLANG ${objdir}/.config)
+	EROFS_STATE=$(grep CONFIG_EROFS_FS= ${objdir}/.config)
 
 	if [[ ${BUILD_LTO} == true && ${BUILD_FULL_LTO} == true  ||  ${BUILD_LTO} == false && ${BUILD_FULL_LTO} == false ]]; then
 		print ${RED} "Both LTO and FULL_LTO is true/false!"
@@ -157,19 +158,17 @@ function make_image()
 		DISABLE_CONF="LTO_NONE LD_GOLD LD_BFD"
 
 		if [ ${BUILD_FULL_LTO} == true ]; then
-			if [ ${SUPPORTS_FULL_CLANG} == CONFIG_ARCH_SUPPORTS_LTO_CLANG=y ]; then
+			if [[ ${SUPPORTS_FULL_CLANG} == CONFIG_ARCH_SUPPORTS_LTO_CLANG=y ]]; then
 				print ${LGR} "${CYN}Enabling ${YEL}Full LTO"
-				ENABLE_CONF="${ENABLE_CONF}"
-				DISABLE_CONF="${DISABLE_CONF} THINLTO"
+				DISABLE_CONF+=" THINLTO"
 			else
 				print ${RED} "Full LTO Unsupported"
 			fi
 
 		else if [ ${BUILD_LTO} == true ]; then
-			if [ ${SUPPORTS_THINLTO_CLANG} == CONFIG_ARCH_SUPPORTS_THINLTO=y ]; then
+			if [[ ${SUPPORTS_THINLTO_CLANG} == CONFIG_ARCH_SUPPORTS_THINLTO=y ]]; then
 				print ${LGR} "${CYN}Enabling ${YEL}ThinLTO"
-				ENABLE_CONF="${ENABLE_CONF} THINLTO"
-				DISABLE_CONF="${DISABLE_CONF}"
+				ENABLE_CONF+=" THINLTO"
 			else
 				print ${RED} "ThinLTO Unsupported"
 			fi
@@ -179,13 +178,17 @@ function make_image()
 
 	if [ ${BUILD_CASEFOLDING} == true ]; then
 		print ${LGR} "${CYN}Enabling ${YEL}Casefolding"
-		ENABLE_CONF="${ENABLE_CONF} CONFIG_UNICODE"
-		DISABLE_CONF="${DISABLE_CONF} CONFIG_SDCARD_FS"
+		ENABLE_CONF+=" CONFIG_UNICODE"
+		DISABLE_CONF+=" CONFIG_SDCARD_FS"
 
 	else
 		print ${LGR} "${LRD}Disabling ${YEL}Casefolding"
-		ENABLE_CONF="${ENABLE_CONF} CONFIG_SDCARD_FS"
-		DISABLE_CONF="${DISABLE_CONF} CONFIG_UNICODE"
+		ENABLE_CONF+=" CONFIG_SDCARD_FS"
+		DISABLE_CONF+=" CONFIG_UNICODE"
+	fi
+
+	if [[ ${EROFS_STATE} == CONFIG_EROFS_FS=y ]]; then
+		print "${YEL}EROFS ${CYN}enabled"
 	fi
 
 	# enable/disable stuff
@@ -198,15 +201,18 @@ function make_image()
 	make_wrapper olddefconfig
 
 	# Clang versioning
-	VERSION=$(${CLANG_LOC}/bin/clang --version | grep -wom 1 "[0-99][0-99].[0-99].[0-99]")
-	COMPILER_NAME="Clang-${VERSION}"
-	if [ ${BUILD_LTO} == true ]; then
-		COMPILER_NAME+="+LTO"
+	if [[ -d ${CLANG_LOC} ]]; then
+		VERSION=$(${CLANG_LOC}/bin/clang --version | grep -wom 1 "[0-99][0-99].[0-99].[0-99]")
+		COMPILER_NAME="Clang-${VERSION}"
+		if [ ${BUILD_LTO} == true ]; then
+			COMPILER_NAME+="+LTO"
+		fi
+		print ${LGR} "Compiling with ${YEL}${COMPILER_NAME}"
+		cd ${kernel_dir}
+		make_wrapper ${TARGET_IMAGE}
+	else
+		screen "Clang dir ${CLANG_LOC} does not exist.\nPlease set in CLANG_LOC"
 	fi
-	print ${LGR} "Compiling with ${YEL}${COMPILER_NAME}"
-	cd ${kernel_dir}
-	make_wrapper ${TARGET_IMAGE}
-
 	completion "${START}" "$(date +%s)"
 }
 
@@ -217,10 +223,27 @@ function completion()
 
 	if [[ -f ${COMPILED_IMAGE} ]]; then
 
+		DATE=$(date '+%d%m%y')
+		DATE_TIME=$(date '+%d%m%y_%H%M%S')
+
+		KERNEL_NAME=$(grep CONFIG_LOCALVERSION= ${objdir}/.config)
+		KERNEL_NAME="${KERNEL_NAME//*=/}"
+		KERNEL_NAME="${KERNEL_NAME//[-'"']/}"
+
+		ZIP_NAME="${KERNEL_NAME}"
+
 		if [[ ${BUILD_CASEFOLDING} == true ]]; then
-			ZIP_NAME="INFINITY${kVersion}-CASEFOLDING${CUSTOM_NAME}"
+			ZIP_NAME+="-CASEFOLDING"
+		fi
+
+		if [[ ${EROFS_STATE} == CONFIG_EROFS_FS=y ]]; then
+			ZIP_NAME+="-EROFS"
+		fi
+
+		if [[ ${RELEASE} == true ]]; then
+			ZIP_NAME+="-${DATE}-RELEASE${CUSTOM_NAME}"
 		else
-			ZIP_NAME="INFINITY${kVersion}${CUSTOM_NAME}"
+			ZIP_NAME+="-${DATE_TIME}${kVersion}${CUSTOM_NAME}"
 		fi
 
 		mv -f ${COMPILED_IMAGE} ${builddir}/anykernel/${TARGET_IMAGE}
@@ -232,7 +255,10 @@ function completion()
                 zip -r -q "${ZIP_NAME}.zip" .
                 rm ${builddir}/anykernel/${TARGET_IMAGE}
                 mv ${builddir}/anykernel/"${ZIP_NAME}.zip" ${builddir}/
-		cp ${builddir}/"${ZIP_NAME}.zip" /mnt/phone_share/
+
+		if [[ ${CUSTOM_ZIP_OUT_LOC} != "" ]]; then
+			cp ${builddir}/"${ZIP_NAME}.zip" ${CUSTOM_ZIP_OUT_LOC}
+		fi
 
 		print ${LGR} "(i)Flashable zip generated under $builddir"
 		if [ ${VERBOSE} == true ]; then
