@@ -131,10 +131,6 @@ $(obj)/vdsox32.so.dbg: $(src)/vdsox32.lds $(vobjx32s) FORCE
 CPPFLAGS_vdso32.lds = $(CPPFLAGS_vdso.lds)
 VDSO_LDFLAGS_vdso32.lds = -m elf_i386 -soname linux-gate.so.1
 
-# This makes sure the $(obj) subdirectory exists even though vdso32/
-# is not a kbuild sub-make subdirectory.
-override obj-dirs = $(dir $(obj)) $(obj)/vdso32/
-
 targets += vdso32/vdso32.lds
 targets += vdso32/note.o vdso32/system_call.o vdso32/sigreturn.o
 targets += vdso32/vclock_gettime.o
@@ -182,9 +178,8 @@ quiet_cmd_vdso = VDSO    $@
 		       -T $(filter %.lds,$^) $(filter %.o,$^) && \
 		 sh $(srctree)/$(src)/checkundef.sh '$(NM)' '$@'
 
-VDSO_LDFLAGS = -shared $(call ld-option, --hash-style=both) \
-	$(call ld-option, --build-id) $(call ld-option, --eh-frame-hdr) \
-	-Bsymbolic -z noexecstack
+VDSO_LDFLAGS = -shared --hash-style=both --build-id \
+	$(call ld-option, --eh-frame-hdr) -Bsymbolic -z noexecstack
 GCOV_PROFILE := n
 
 #

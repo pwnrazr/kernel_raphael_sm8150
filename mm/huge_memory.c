@@ -1137,8 +1137,8 @@ static int do_huge_pmd_wp_page_fallback(struct vm_fault *vmf, pmd_t orig_pmd,
 	unsigned long mmun_start;	/* For mmu_notifiers */
 	unsigned long mmun_end;		/* For mmu_notifiers */
 
-	pages = kmalloc(sizeof(struct page *) * HPAGE_PMD_NR,
-			GFP_KERNEL);
+	pages = kmalloc_array(HPAGE_PMD_NR, sizeof(struct page *),
+			      GFP_KERNEL);
 	if (unlikely(!pages)) {
 		ret |= VM_FAULT_OOM;
 		goto out;
@@ -1519,7 +1519,7 @@ int do_huge_pmd_numa_page(struct vm_fault *vmf, pmd_t pmd)
 	 */
 	get_page(page);
 	spin_unlock(vmf->ptl);
-	anon_vma = page_lock_anon_vma_read(page);
+	anon_vma = page_lock_anon_vma_read(page, NULL);
 
 	/* Confirm the PMD did not change while page_table_lock was released */
 	spin_lock(vmf->ptl);

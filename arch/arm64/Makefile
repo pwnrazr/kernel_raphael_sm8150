@@ -86,10 +86,6 @@ ifeq ($(CONFIG_COMPAT_VDSO), y)
   else ifeq ($(cc-name),clang)
     export CLANG_TRIPLE_ARM32 ?= $(CROSS_COMPILE_ARM32)
     export CLANG_TARGET_ARM32 := --target=$(notdir $(CLANG_TRIPLE_ARM32:%-=%))
-    export GCC_TOOLCHAIN32_DIR := $(dir $(shell which $(CROSS_COMPILE_ARM32)ld))
-    export GCC_TOOLCHAIN32 := $(realpath $(GCC_TOOLCHAIN32_DIR)/..)
-    export CLANG_PREFIX32 := --prefix=$(GCC_TOOLCHAIN32_DIR)$(notdir $(CROSS_COMPILE_ARM32))
-    export CLANG_GCC32_TC := --gcc-toolchain=$(GCC_TOOLCHAIN32)
     export CONFIG_VDSO32 := y
     vdso32 := -DCONFIG_VDSO32=1
   else ifeq ($(shell which $(CROSS_COMPILE_ARM32)$(cc-name) 2> /dev/null),)
@@ -101,14 +97,7 @@ ifeq ($(CONFIG_COMPAT_VDSO), y)
   endif
 endif
 
-ifeq ($(cc-name),clang)
-# This is a workaround for https://bugs.llvm.org/show_bug.cgi?id=30792.
-# TODO: revert when this is fixed in LLVM.
-KBUILD_CFLAGS	+= -mno-implicit-float
-else
-KBUILD_CFLAGS	+= -mgeneral-regs-only
-endif
-KBUILD_CFLAGS	+= $(lseinstr) $(brokengasinst) $(vdso32)
+KBUILD_CFLAGS	+= -mgeneral-regs-only $(lseinstr) $(brokengasinst) $(vdso32)
 KBUILD_CFLAGS	+= -fno-asynchronous-unwind-tables -ffixed-x18
 KBUILD_CFLAGS	+= -fno-pic
 KBUILD_AFLAGS	+= $(lseinstr) $(brokengasinst) $(vdso32)
@@ -131,24 +120,15 @@ endif
 ifeq ($(CONFIG_CPU_BIG_ENDIAN), y)
 KBUILD_CPPFLAGS	+= -mbig-endian
 CHECKFLAGS	+= -D__AARCH64EB__
-AS		+= -EB
-LD		+= -EB
-ifeq ($(ld-name),gold)
-LDFLAGS		+= -maarch64_elf64_be_vec
-else
-LDFLAGS		+= -maarch64linuxb
-endif
+# Prefer the baremetal ELF build target, but not all toolchains include
+# it so fall back to the standard linux version if needed.
+LDFLAGS		+= -EB $(call ld-option, -maarch64elfb, -maarch64linuxb)
 UTS_MACHINE	:= aarch64_be
 else
 KBUILD_CPPFLAGS	+= -mlittle-endian
 CHECKFLAGS	+= -D__AARCH64EL__
-AS		+= -EL
-LD		+= -EL
-ifeq ($(ld-name),gold)
-LDFLAGS		+= -maarch64_elf64_le_vec
-else
-LDFLAGS		+= -maarch64linux
-endif
+# Same as above, prefer ELF but fall back to linux target if needed.
+LDFLAGS		+= -EL $(call ld-option, -maarch64elf, -maarch64linux)
 UTS_MACHINE	:= aarch64
 endif
 
@@ -272,6 +252,7 @@ endif
 PHONY += vdso_install
 vdso_install:
 	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso $@
+	$(Q)$(MAKE) $(build)=arch/arm64/kernel/vdso32 $@
 
 # We use MRPROPER_FILES and CLEAN_FILES now
 archclean:

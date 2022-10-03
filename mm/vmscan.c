@@ -901,6 +901,10 @@ static enum page_references page_check_references(struct page *page,
 	if (vm_flags & VM_LOCKED)
 		return PAGEREF_RECLAIM;
 
+	/* rmap lock contention: rotate */
+	if (referenced_ptes == -1)
+		return PAGEREF_KEEP;
+
 	if (referenced_ptes) {
 		if (PageSwapBacked(page))
 			return PAGEREF_ACTIVATE;
@@ -2127,8 +2131,9 @@ static void shrink_active_list(unsigned long nr_to_scan,
 			}
 		}
 
+		/* Referenced or rmap lock contention: rotate */
 		if (page_referenced(page, 0, sc->target_mem_cgroup,
-				    &vm_flags)) {
+				    &vm_flags) != 0) {
 			nr_rotated += hpage_nr_pages(page);
 			/*
 			 * Identify referenced, file-backed active pages and
@@ -3877,7 +3882,8 @@ static bool age_lruvec(struct lruvec *lruvec, struct scan_control *sc,
 }
 
 /* to protect the working set of the last N jiffies */
-static unsigned long lru_gen_min_ttl __read_mostly;
+static unsigned long lru_gen_min_ttl __read_mostly = 5 * HZ; // 5000ms
+static int lru_gen_min_ttl_unsatisfied;
 
 static void lru_gen_age_node(struct pglist_data *pgdat, struct scan_control *sc)
 {
@@ -3923,6 +3929,8 @@ static void lru_gen_age_node(struct pglist_data *pgdat, struct scan_control *sc)
 	 * memcgs are either below min or empty.
 	 */
 	if (!success) {
+		pr_err("mglru: min_ttl unsatisfied, calling OOM killer\n");
+		lru_gen_min_ttl_unsatisfied++;
 #ifdef CONFIG_ANDROID_SIMPLE_LMK
 		simple_lmk_trigger();
 #else
@@ -4682,6 +4690,15 @@ static struct kobj_attribute lru_gen_min_ttl_attr = __ATTR(
 	min_ttl_ms, 0644, show_min_ttl, store_min_ttl
 );
 
+static ssize_t show_min_ttl_unsatisfied(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", lru_gen_min_ttl_unsatisfied);
+}
+
+static struct kobj_attribute lru_gen_min_ttl_unsatisfied_attr = __ATTR(
+	min_ttl_unsatisfied, 0444, show_min_ttl_unsatisfied, NULL
+);
+
 static ssize_t show_enable(struct kobject *kobj, struct kobj_attribute *attr, char *buf)
 {
 	unsigned int caps = 0;
@@ -4730,6 +4747,7 @@ static struct kobj_attribute lru_gen_enabled_attr = __ATTR(
 );
 
 static struct attribute *lru_gen_attrs[] = {
+	&lru_gen_min_ttl_unsatisfied_attr.attr,
 	&lru_gen_min_ttl_attr.attr,
 	&lru_gen_enabled_attr.attr,
 	NULL

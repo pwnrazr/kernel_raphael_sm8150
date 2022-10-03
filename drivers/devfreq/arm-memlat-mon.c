@@ -199,7 +199,7 @@ static unsigned long get_cnt(struct memlat_hwmon *hw)
 
 	/* Dispatch asynchronous IPIs to each CPU to read the perf events */
 	cpus_read_lock();
-	migrate_disable();
+	preempt_disable();
 	this_cpu = raw_smp_processor_id();
 	cpus_read_mask = *cpumask_bits(&cpu_grp->cpus);
 	tmp_mask = cpus_read_mask & ~BIT(this_cpu);
@@ -218,7 +218,7 @@ static unsigned long get_cnt(struct memlat_hwmon *hw)
 	/* Read this CPU's events while the IPIs run */
 	if (cpus_read_mask & BIT(this_cpu))
 		read_perf_counters(&ipd, this_cpu);
-	migrate_enable();
+	preempt_enable();
 
 	/* Bail out if there weren't any CPUs available */
 	if (!cpus_read_mask)
@@ -429,13 +429,17 @@ static int arm_memlat_mon_driver_probe(struct platform_device *pdev)
 	}
 
 	hw->num_cores = cpumask_weight(&cpu_grp->cpus);
-	hw->core_stats = devm_kzalloc(dev, hw->num_cores *
-				sizeof(*(hw->core_stats)), GFP_KERNEL);
+	hw->core_stats = devm_kcalloc(dev,
+				      hw->num_cores,
+				      sizeof(*(hw->core_stats)),
+				      GFP_KERNEL);
 	if (!hw->core_stats)
 		return -ENOMEM;
 
-	cpu_grp->cpustats = devm_kzalloc(dev, hw->num_cores *
-			sizeof(*(cpu_grp->cpustats)), GFP_KERNEL);
+	cpu_grp->cpustats = devm_kcalloc(dev,
+					 hw->num_cores,
+					 sizeof(*(cpu_grp->cpustats)),
+					 GFP_KERNEL);
 	if (!cpu_grp->cpustats)
 		return -ENOMEM;
 
