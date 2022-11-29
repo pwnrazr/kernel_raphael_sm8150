@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-2.0
 VERSION = 4
 PATCHLEVEL = 14
-SUBLEVEL = 296
+SUBLEVEL = 300
 EXTRAVERSION =
 NAME = Petit Gorille
 
@@ -547,6 +547,7 @@ CLANG_FLAGS	+= -Werror=unknown-warning-option
 CLANG_FLAGS	+= $(call cc-option, -Wno-misleading-indentation)
 CLANG_FLAGS	+= $(call cc-option, -Wno-bool-operation)
 CLANG_FLAGS	+= $(call cc-option, -Wno-unsequenced)
+CLANG_FLAGS	+= $(call cc-option, -Wno-void-ptr-dereference)
 CLANG_FLAGS	+= $(call cc-option, -opaque-pointers)
 KBUILD_CFLAGS	+= $(CLANG_FLAGS)
 KBUILD_AFLAGS	+= $(CLANG_FLAGS)
@@ -783,6 +784,7 @@ endif
 ifdef CONFIG_INLINE_OPTIMIZATION
 KBUILD_CFLAGS	+= -mllvm -inline-threshold=2000
 KBUILD_CFLAGS	+= -mllvm -inlinehint-threshold=3000
+KBUILD_CFLAGS	+= -mllvm -unroll-threshold=700
 endif
 
 # Tell gcc to never replace conditional load with a non-conditional one
