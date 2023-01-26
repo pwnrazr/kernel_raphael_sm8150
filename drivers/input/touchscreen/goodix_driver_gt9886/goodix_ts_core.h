@@ -498,7 +498,10 @@ struct goodix_ts_core {
 	int fod_pressed;
 	int fod_test;
 	int udfps_pressed;
+	int udfps_enabled;
 	int double_wakeup;
+	int double_tap_pressed;
+	int double_tap_enabled;
 	int result_type;
 #ifdef CONFIG_TOUCHSCREEN_GOODIX_GTX8_GAMEMODE
 	int touch_mode[Touch_Mode_NUM][VALUE_TYPE_SIZE];
@@ -1286,7 +1289,10 @@ struct goodix_ts_core {
 	int fod_pressed;
 	int fod_test;
 	int udfps_pressed;
+	int udfps_enabled;
 	int double_wakeup;
+	int double_tap_pressed;
+	int double_tap_enabled;
 	int result_type;
 	struct class *gtp_tp_class;
 	struct device *gtp_touch_dev;

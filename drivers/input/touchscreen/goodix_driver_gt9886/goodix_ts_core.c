@@ -843,6 +843,57 @@ static ssize_t udfps_pressed_show(struct device *dev,
 	return scnprintf(buf, 10, "%i\n", core_data->udfps_pressed);
 }
 
+static ssize_t udfps_enabled_store(struct device *dev,
+				  struct device_attribute *attr, const char *buf,
+				  size_t count)
+{
+	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
+	core_data->udfps_enabled = buf[0] != '0';
+
+	core_data->fod_status = core_data->udfps_enabled;
+	core_data->gesture_enabled = core_data->double_wakeup | core_data->fod_status;
+
+	goodix_check_gesture_stat(true);
+
+	return count;
+}
+
+static ssize_t udfps_enabled_show(struct device *dev,
+				  struct device_attribute *attr, char *buf)
+{
+	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
+	return scnprintf(buf, 10, "%i\n", core_data->udfps_enabled);
+}
+
+static ssize_t double_tap_pressed_show(struct device *dev,
+				  struct device_attribute *attr, char *buf)
+{
+	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
+	return scnprintf(buf, 10, "%i\n", core_data->double_tap_pressed);
+}
+
+static ssize_t double_tap_enabled_store(struct device *dev,
+				  struct device_attribute *attr, const char *buf,
+				  size_t count)
+{
+	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
+	core_data->double_tap_enabled = buf[0] != '0';
+
+	core_data->double_wakeup = core_data->double_tap_enabled;
+	core_data->gesture_enabled = core_data->double_wakeup | core_data->fod_status;
+
+	goodix_check_gesture_stat(true);
+
+	return count;
+}
+
+static ssize_t double_tap_enabled_show(struct device *dev,
+				  struct device_attribute *attr, char *buf)
+{
+	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
+	return scnprintf(buf, 10, "%i\n", core_data->double_tap_enabled);
+}
+
 static DEVICE_ATTR(extmod_info, 0444, goodix_ts_extmod_show, NULL);
 static DEVICE_ATTR(driver_info, 0444, goodix_ts_driver_info_show, NULL);
 static DEVICE_ATTR(chip_info, 0444, goodix_ts_chip_info_show, NULL);
@@ -853,6 +904,9 @@ static DEVICE_ATTR(read_cfg, 0444, goodix_ts_read_cfg_show, NULL);
 static DEVICE_ATTR(irq_info, 0664,
 		goodix_ts_irq_info_show, goodix_ts_irq_info_store);
 static DEVICE_ATTR(udfps_pressed, 0660, udfps_pressed_show, NULL);
+static DEVICE_ATTR(udfps_enabled, 0664, udfps_enabled_show, udfps_enabled_store);
+static DEVICE_ATTR(double_tap_pressed, 0660, double_tap_pressed_show, NULL);
+static DEVICE_ATTR(double_tap_enabled, 0664, double_tap_enabled_show, double_tap_enabled_store);
 #ifdef CONFIG_TOUCHSCREEN_GOODIX_GTX8_GAMEMODE
 static DEVICE_ATTR(game_mode, 0664,
 		goodix_ts_game_mode_show, goodix_ts_game_mode_store);
@@ -868,6 +922,9 @@ static struct attribute *sysfs_attrs[] = {
 	&dev_attr_read_cfg.attr,
 	&dev_attr_irq_info.attr,
 	&dev_attr_udfps_pressed.attr,
+	&dev_attr_udfps_enabled.attr,
+	&dev_attr_double_tap_pressed.attr,
+	&dev_attr_double_tap_enabled.attr,
 #ifdef CONFIG_TOUCHSCREEN_GOODIX_GTX8_GAMEMODE
 	&dev_attr_game_mode.attr,
 #endif
@@ -1963,26 +2020,35 @@ int goodix_ts_msm_drm_notifier_callback(struct notifier_block *self,
 	if (msm_drm_event && msm_drm_event->data && core_data) {
 		blank = *(int *)(msm_drm_event->data);
 		flush_workqueue(core_data->event_wq);
-		if (event == MSM_DRM_EVENT_BLANK && (blank == MSM_DRM_BLANK_POWERDOWN ||
-			blank == MSM_DRM_BLANK_LP)) {
-#ifdef CONFIG_FORCE_FOD_STATUS
-			core_data->fod_status = 1;
-#endif
-			ts_info("touchpanel suspend .....blank=%d\n", blank);
-			ts_info("touchpanel suspend .....suspend_stat=%d\n", atomic_read(&core_data->suspend_stat));
-			if (atomic_read(&core_data->suspend_stat))
-				return 0;
-			ts_info("touchpanel suspend by %s", blank == MSM_DRM_BLANK_POWERDOWN ? "blank" : "doze");
-			queue_work(core_data->event_wq, &core_data->suspend_work);
-		} else if (event == MSM_DRM_EVENT_BLANK && blank == MSM_DRM_BLANK_UNBLANK) {
-			//if (!atomic_read(&core_data->suspend_stat))
-			core_data->udfps_pressed = 0;
-			ts_info("core_data->suspend_stat = %d\n", atomic_read(&core_data->suspend_stat));
-			ts_info("touchpanel resume");
-			queue_work(core_data->event_wq, &core_data->resume_work);
+
+		switch (blank) {
+			case MSM_DRM_BLANK_POWERDOWN:
+				goto suspend;
+				break;
+			case MSM_DRM_BLANK_LP:
+				goto suspend;
+				break;
+			case MSM_DRM_BLANK_UNBLANK:
+				goto resume;
+				break;
 		}
 	}
 
+suspend:
+	ts_info("touchpanel suspend .....blank=%d\n", blank);
+	ts_info("touchpanel suspend .....suspend_stat=%d\n", atomic_read(&core_data->suspend_stat));
+	if (atomic_read(&core_data->suspend_stat))
+		return 0;
+	ts_info("touchpanel suspend by %s", blank == MSM_DRM_BLANK_POWERDOWN ? "blank" : "doze");
+	queue_work(core_data->event_wq, &core_data->suspend_work);
+	return 0;
+resume:
+	//if (!atomic_read(&core_data->suspend_stat))
+	core_data->udfps_pressed = 0;
+	core_data->double_tap_pressed = 0;
+	ts_info("core_data->suspend_stat = %d\n", atomic_read(&core_data->suspend_stat));
+	ts_info("touchpanel resume");
+	queue_work(core_data->event_wq, &core_data->resume_work);
 	return 0;
 }
 #endif

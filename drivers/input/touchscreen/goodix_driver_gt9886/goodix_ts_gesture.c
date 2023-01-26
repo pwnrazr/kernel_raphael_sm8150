@@ -235,22 +235,38 @@ int goodix_sync_ic_stat(struct goodix_ts_core *core_data)
 
 	mutex_lock(&core_data->work_stat);
 	tp_stat = atomic_read(&core_data->suspend_stat);
-	if (tp_stat == TP_GESTURE_DBCLK) {
-		ts_info("sync IC suspend stat from DBCLK to DBCLK_FOD");
-
-		/*TODO:maybe add retry here*/
-		ret = goodix_set_suspend_func(core_data);
-		if (ret < 0)
-			ts_err("set suspend function failed!!");
-	} else if (tp_stat == TP_SLEEP) {
-		ts_info("sync IC suspend stat from SLEEP to FOD");
-
-		ret = goodix_wakeup_and_set_suspend_func(core_data);
-		if (ret < 0)
-			ts_err("set suspend function failed!!");
+	switch (tp_stat) {
+		case TP_NO_SUSPEND:
+			goto exit;
+			break;
+		case TP_GESTURE_DBCLK:
+			goto sync;
+			break;
+		case TP_GESTURE_FOD:
+			goto sync;
+			break;
+		case TP_GESTURE_DBCLK_FOD:
+			goto sync;
+			break;
+		case TP_SLEEP:
+			goto fromsleep;
+			break;
 	}
-	mutex_unlock(&core_data->work_stat);
 
+sync:
+	ret = goodix_set_suspend_func(core_data);
+	if (ret < 0)
+		ts_err("set suspend function failed");
+	goto exit;
+
+fromsleep:
+	ret = goodix_wakeup_and_set_suspend_func(core_data);
+	if (ret < 0)
+		ts_err("set suspend function failed");
+	goto exit;
+
+exit:
+	mutex_unlock(&core_data->work_stat);
 	return ret;
 }
 
@@ -505,16 +521,17 @@ static int gsx_gesture_ist(struct goodix_ts_core *core_data,
 
 	if (temp_data[2] == 0xcc && core_data->double_wakeup) {
 		/*ts_info("Gesture match success, resume IC");*/
+		if (!core_data->double_tap_enabled) {
+			goto re_send_ges_cmd;
+		}
+		core_data->double_tap_pressed = 1;
+		sysfs_notify(&core_data->pdev->dev.kobj, NULL, "double_tap_pressed");
 #ifdef CONFIG_GOODIX_HWINFO
 		if (core_data) {
 		core_data->dbclick_count++;
 		snprintf(ch, sizeof(ch), "%d", core_data->dbclick_count);
 		}
 #endif
-		input_report_key(core_data->input_dev, KEY_WAKEUP, 1);
-		input_sync(core_data->input_dev);
-		input_report_key(core_data->input_dev, KEY_WAKEUP, 0);
-		input_sync(core_data->input_dev);
 		goto gesture_ist_exit;
 
 	}
@@ -634,6 +651,8 @@ static int goodix_wakeup_and_set_suspend_func(struct goodix_ts_core *core_data)
 		atomic_set(&core_data->suspend_stat, TP_GESTURE_DBCLK);
 	} else if (core_data->fod_status) {
 		atomic_set(&core_data->suspend_stat, TP_GESTURE_FOD);
+	} else {
+		atomic_set(&core_data->suspend_stat, TP_SLEEP);
 	}
 	ts_info("suspend_stat[%d]", atomic_read(&core_data->suspend_stat));
 

@@ -109,6 +109,7 @@ function make_wrapper() {
 		make -s -j${cpus} \
 		LLVM=1 \
 		LLVM_IAS=1 \
+		CC="ccache clang" \
 		CROSS_COMPILE="aarch64-linux-gnu-" \
 		CROSS_COMPILE_ARM32="arm-linux-gnueabi-" \
 		KBUILD_COMPILER_STRING="${COMPILER_NAME}" \
@@ -174,8 +175,6 @@ function make_image()
 		ENABLE_CONF+=" CONFIG_SDCARD_FS"
 		DISABLE_CONF+=" CONFIG_UNICODE"
 	fi
-
-	ENABLE_CONF+=" CONFIG_FORCE_FOD_STATUS" # enable my hack
 
 	if [[ ${EROFS_STATE} == CONFIG_EROFS_FS=y ]]; then
 		print "${YEL}EROFS ${CYN}enabled"
