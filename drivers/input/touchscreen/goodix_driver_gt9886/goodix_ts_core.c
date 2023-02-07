@@ -987,7 +987,7 @@ static void release_all_touches(struct goodix_ts_core *core_data)
  * @touch_data: touch data pointer
  * return: 0 ok, <0 failed
  */
-static int goodix_ts_input_report(struct input_dev *dev,
+static inline int goodix_ts_input_report(struct input_dev *dev,
 		struct goodix_touch_data *touch_data)
 {
 	struct goodix_ts_coords *coords = &touch_data->coords[0];
@@ -1128,7 +1128,7 @@ static void goodix_ts_sleep_work(struct work_struct *work)
  * @core_data: pointer to touch core data
  * return: 0 ok, <0 failed
  */
-static irqreturn_t goodix_ts_threadirq_func(int irq, void *data)
+static inline irqreturn_t goodix_ts_threadirq_func(int irq, void *data)
 {
 	u8 irq_flag = 0;
 	struct goodix_ts_core *core_data = data;
@@ -1966,10 +1966,11 @@ suspend:
 	queue_work(core_data->event_wq, &core_data->suspend_work);
 	return 0;
 resume:
-	//if (!atomic_read(&core_data->suspend_stat))
+	ts_info("core_data->suspend_stat = %d\n", atomic_read(&core_data->suspend_stat));
+	if (!atomic_read(&core_data->suspend_stat))
+		return 0;
 	core_data->udfps_pressed = 0;
 	core_data->double_tap_pressed = 0;
-	ts_info("core_data->suspend_stat = %d\n", atomic_read(&core_data->suspend_stat));
 	ts_info("touchpanel resume");
 	queue_work(core_data->event_wq, &core_data->resume_work);
 	return 0;
