@@ -312,10 +312,6 @@ UFS_DEVICE_DESC_PARAM(device_version, _DEV_VER, 2);
 UFS_DEVICE_DESC_PARAM(number_of_secure_wpa, _NUM_SEC_WPA, 1);
 UFS_DEVICE_DESC_PARAM(psa_max_data_size, _PSA_MAX_DATA, 4);
 UFS_DEVICE_DESC_PARAM(psa_state_timeout, _PSA_TMT, 1);
-UFS_DEVICE_DESC_PARAM(ext_feature_sup, _EXT_UFS_FEATURE_SUP, 4);
-UFS_DEVICE_DESC_PARAM(wb_presv_us_en, _WB_US_RED_EN, 1);
-UFS_DEVICE_DESC_PARAM(wb_type, _WB_TYPE, 1);
-UFS_DEVICE_DESC_PARAM(wb_shared_alloc_units, _WB_SHARED_ALLOC_UNITS, 4);
 
 static struct attribute *ufs_sysfs_device_descriptor[] = {
 	&dev_attr_device_type.attr,
@@ -344,10 +340,6 @@ static struct attribute *ufs_sysfs_device_descriptor[] = {
 	&dev_attr_number_of_secure_wpa.attr,
 	&dev_attr_psa_max_data_size.attr,
 	&dev_attr_psa_state_timeout.attr,
-	&dev_attr_ext_feature_sup.attr,
-	&dev_attr_wb_presv_us_en.attr,
-	&dev_attr_wb_type.attr,
-	&dev_attr_wb_shared_alloc_units.attr,
 	NULL,
 };
 
@@ -371,100 +363,6 @@ static struct attribute *ufs_sysfs_interconnect_descriptor[] = {
 static const struct attribute_group ufs_sysfs_interconnect_descriptor_group = {
 	.name = "interconnect_descriptor",
 	.attrs = ufs_sysfs_interconnect_descriptor,
-};
-
-#define UFS_GEOMETRY_DESC_PARAM(_name, _uname, _size)			\
-	UFS_DESC_PARAM(_name, _uname, GEOMETRY, _size)
-
-UFS_GEOMETRY_DESC_PARAM(raw_device_capacity, _DEV_CAP, 8);
-UFS_GEOMETRY_DESC_PARAM(max_number_of_luns, _MAX_NUM_LUN, 1);
-UFS_GEOMETRY_DESC_PARAM(segment_size, _SEG_SIZE, 4);
-UFS_GEOMETRY_DESC_PARAM(allocation_unit_size, _ALLOC_UNIT_SIZE, 1);
-UFS_GEOMETRY_DESC_PARAM(min_addressable_block_size, _MIN_BLK_SIZE, 1);
-UFS_GEOMETRY_DESC_PARAM(optimal_read_block_size, _OPT_RD_BLK_SIZE, 1);
-UFS_GEOMETRY_DESC_PARAM(optimal_write_block_size, _OPT_WR_BLK_SIZE, 1);
-UFS_GEOMETRY_DESC_PARAM(max_in_buffer_size, _MAX_IN_BUF_SIZE, 1);
-UFS_GEOMETRY_DESC_PARAM(max_out_buffer_size, _MAX_OUT_BUF_SIZE, 1);
-UFS_GEOMETRY_DESC_PARAM(rpmb_rw_size, _RPMB_RW_SIZE, 1);
-UFS_GEOMETRY_DESC_PARAM(dyn_capacity_resource_policy, _DYN_CAP_RSRC_PLC, 1);
-UFS_GEOMETRY_DESC_PARAM(data_ordering, _DATA_ORDER, 1);
-UFS_GEOMETRY_DESC_PARAM(max_number_of_contexts, _MAX_NUM_CTX, 1);
-UFS_GEOMETRY_DESC_PARAM(sys_data_tag_unit_size, _TAG_UNIT_SIZE, 1);
-UFS_GEOMETRY_DESC_PARAM(sys_data_tag_resource_size, _TAG_RSRC_SIZE, 1);
-UFS_GEOMETRY_DESC_PARAM(secure_removal_types, _SEC_RM_TYPES, 1);
-UFS_GEOMETRY_DESC_PARAM(memory_types, _MEM_TYPES, 2);
-UFS_GEOMETRY_DESC_PARAM(sys_code_memory_max_alloc_units,
-	_SCM_MAX_NUM_UNITS, 4);
-UFS_GEOMETRY_DESC_PARAM(sys_code_memory_capacity_adjustment_factor,
-	_SCM_CAP_ADJ_FCTR, 2);
-UFS_GEOMETRY_DESC_PARAM(non_persist_memory_max_alloc_units,
-	_NPM_MAX_NUM_UNITS, 4);
-UFS_GEOMETRY_DESC_PARAM(non_persist_memory_capacity_adjustment_factor,
-	_NPM_CAP_ADJ_FCTR, 2);
-UFS_GEOMETRY_DESC_PARAM(enh1_memory_max_alloc_units,
-	_ENM1_MAX_NUM_UNITS, 4);
-UFS_GEOMETRY_DESC_PARAM(enh1_memory_capacity_adjustment_factor,
-	_ENM1_CAP_ADJ_FCTR, 2);
-UFS_GEOMETRY_DESC_PARAM(enh2_memory_max_alloc_units,
-	_ENM2_MAX_NUM_UNITS, 4);
-UFS_GEOMETRY_DESC_PARAM(enh2_memory_capacity_adjustment_factor,
-	_ENM2_CAP_ADJ_FCTR, 2);
-UFS_GEOMETRY_DESC_PARAM(enh3_memory_max_alloc_units,
-	_ENM3_MAX_NUM_UNITS, 4);
-UFS_GEOMETRY_DESC_PARAM(enh3_memory_capacity_adjustment_factor,
-	_ENM3_CAP_ADJ_FCTR, 2);
-UFS_GEOMETRY_DESC_PARAM(enh4_memory_max_alloc_units,
-	_ENM4_MAX_NUM_UNITS, 4);
-UFS_GEOMETRY_DESC_PARAM(enh4_memory_capacity_adjustment_factor,
-	_ENM4_CAP_ADJ_FCTR, 2);
-UFS_GEOMETRY_DESC_PARAM(wb_max_alloc_units, _WB_MAX_ALLOC_UNITS, 4);
-UFS_GEOMETRY_DESC_PARAM(wb_max_wb_luns, _WB_MAX_WB_LUNS, 1);
-UFS_GEOMETRY_DESC_PARAM(wb_buff_cap_adj, _WB_BUFF_CAP_ADJ, 1);
-UFS_GEOMETRY_DESC_PARAM(wb_sup_red_type, _WB_SUP_RED_TYPE, 1);
-UFS_GEOMETRY_DESC_PARAM(wb_sup_wb_type, _WB_SUP_WB_TYPE, 1);
-
-
-static struct attribute *ufs_sysfs_geometry_descriptor[] = {
-	&dev_attr_raw_device_capacity.attr,
-	&dev_attr_max_number_of_luns.attr,
-	&dev_attr_segment_size.attr,
-	&dev_attr_allocation_unit_size.attr,
-	&dev_attr_min_addressable_block_size.attr,
-	&dev_attr_optimal_read_block_size.attr,
-	&dev_attr_optimal_write_block_size.attr,
-	&dev_attr_max_in_buffer_size.attr,
-	&dev_attr_max_out_buffer_size.attr,
-	&dev_attr_rpmb_rw_size.attr,
-	&dev_attr_dyn_capacity_resource_policy.attr,
-	&dev_attr_data_ordering.attr,
-	&dev_attr_max_number_of_contexts.attr,
-	&dev_attr_sys_data_tag_unit_size.attr,
-	&dev_attr_sys_data_tag_resource_size.attr,
-	&dev_attr_secure_removal_types.attr,
-	&dev_attr_memory_types.attr,
-	&dev_attr_sys_code_memory_max_alloc_units.attr,
-	&dev_attr_sys_code_memory_capacity_adjustment_factor.attr,
-	&dev_attr_non_persist_memory_max_alloc_units.attr,
-	&dev_attr_non_persist_memory_capacity_adjustment_factor.attr,
-	&dev_attr_enh1_memory_max_alloc_units.attr,
-	&dev_attr_enh1_memory_capacity_adjustment_factor.attr,
-	&dev_attr_enh2_memory_max_alloc_units.attr,
-	&dev_attr_enh2_memory_capacity_adjustment_factor.attr,
-	&dev_attr_enh3_memory_max_alloc_units.attr,
-	&dev_attr_enh3_memory_capacity_adjustment_factor.attr,
-	&dev_attr_enh4_memory_max_alloc_units.attr,
-	&dev_attr_enh4_memory_capacity_adjustment_factor.attr,
-	&dev_attr_wb_max_alloc_units.attr,
-	&dev_attr_wb_max_wb_luns.attr,
-	&dev_attr_wb_buff_cap_adj.attr,
-	&dev_attr_wb_sup_red_type.attr,
-	&dev_attr_wb_sup_wb_type.attr,
-	NULL,
-};
-
-static const struct attribute_group ufs_sysfs_geometry_descriptor_group = {
-	.name = "geometry_descriptor",
-	.attrs = ufs_sysfs_geometry_descriptor,
 };
 
 #define UFS_HEALTH_DESC_PARAM(_name, _uname, _size)			\
@@ -671,7 +569,7 @@ static ssize_t _name##_show(struct device *dev,				\
 	pm_runtime_put_sync(hba->dev);					\
 	if (ret)							\
 		return -EINVAL;						\
-	return snprintf(buf, PAGE_SIZE, "%s\n", flag ? "true" : "false"); \
+	return sprintf(buf, "%s\n", flag ? "true" : "false");		\
 }									\
 static DEVICE_ATTR_RO(_name)
 
@@ -683,9 +581,6 @@ UFS_FLAG(life_span_mode_enable, _LIFE_SPAN_MODE_ENABLE);
 UFS_FLAG(phy_resource_removal, _FPHYRESOURCEREMOVAL);
 UFS_FLAG(busy_rtc, _BUSY_RTC);
 UFS_FLAG(disable_fw_update, _PERMANENTLY_DISABLE_FW_UPDATE);
-UFS_FLAG(wb_enable, _WB_EN);
-UFS_FLAG(wb_flush_en, _WB_BUFF_FLUSH_EN);
-UFS_FLAG(wb_flush_during_h8, _WB_BUFF_FLUSH_DURING_HIBERN8);
 
 static struct attribute *ufs_sysfs_device_flags[] = {
 	&dev_attr_device_init.attr,
@@ -696,9 +591,6 @@ static struct attribute *ufs_sysfs_device_flags[] = {
 	&dev_attr_phy_resource_removal.attr,
 	&dev_attr_busy_rtc.attr,
 	&dev_attr_disable_fw_update.attr,
-	&dev_attr_wb_enable.attr,
-	&dev_attr_wb_flush_en.attr,
-	&dev_attr_wb_flush_during_h8.attr,
 	NULL,
 };
 
@@ -720,7 +612,7 @@ static ssize_t _name##_show(struct device *dev,				\
 	pm_runtime_put_sync(hba->dev);					\
 	if (ret)							\
 		return -EINVAL;						\
-	return snprintf(buf, PAGE_SIZE, "0x%08X\n", value);		\
+	return sprintf(buf, "0x%08X\n", value);				\
 }									\
 static DEVICE_ATTR_RO(_name)
 
@@ -740,11 +632,6 @@ UFS_ATTRIBUTE(exception_event_status, _EE_STATUS);
 UFS_ATTRIBUTE(ffu_status, _FFU_STATUS);
 UFS_ATTRIBUTE(psa_state, _PSA_STATE);
 UFS_ATTRIBUTE(psa_data_size, _PSA_DATA_SIZE);
-UFS_ATTRIBUTE(wb_flush_status, _WB_FLUSH_STATUS);
-UFS_ATTRIBUTE(wb_avail_buf, _AVAIL_WB_BUFF_SIZE);
-UFS_ATTRIBUTE(wb_life_time_est, _WB_BUFF_LIFE_TIME_EST);
-UFS_ATTRIBUTE(wb_cur_buf, _CURR_WB_BUFF_SIZE);
-
 
 static struct attribute *ufs_sysfs_attributes[] = {
 	&dev_attr_boot_lun_enabled.attr,
@@ -763,10 +650,6 @@ static struct attribute *ufs_sysfs_attributes[] = {
 	&dev_attr_ffu_status.attr,
 	&dev_attr_psa_state.attr,
 	&dev_attr_psa_data_size.attr,
-	&dev_attr_wb_flush_status.attr,
-	&dev_attr_wb_avail_buf.attr,
-	&dev_attr_wb_life_time_est.attr,
-	&dev_attr_wb_cur_buf.attr,
 	NULL,
 };
 
@@ -779,7 +662,6 @@ static const struct attribute_group *ufs_sysfs_groups[] = {
 	&ufs_sysfs_default_group,
 	&ufs_sysfs_device_descriptor_group,
 	&ufs_sysfs_interconnect_descriptor_group,
-	&ufs_sysfs_geometry_descriptor_group,
 	&ufs_sysfs_health_descriptor_group,
 	&ufs_sysfs_power_descriptor_group,
 	&ufs_sysfs_string_descriptors_group,
@@ -818,8 +700,6 @@ UFS_UNIT_DESC_PARAM(provisioning_type, _PROVISIONING_TYPE, 1);
 UFS_UNIT_DESC_PARAM(physical_memory_resourse_count, _PHY_MEM_RSRC_CNT, 8);
 UFS_UNIT_DESC_PARAM(context_capabilities, _CTX_CAPABILITIES, 2);
 UFS_UNIT_DESC_PARAM(large_unit_granularity, _LARGE_UNIT_SIZE_M1, 1);
-UFS_UNIT_DESC_PARAM(wb_buf_alloc_units, _WB_BUF_ALLOC_UNITS, 4);
-
 
 static struct attribute *ufs_sysfs_unit_descriptor[] = {
 	&dev_attr_boot_lun_id.attr,
@@ -835,7 +715,6 @@ static struct attribute *ufs_sysfs_unit_descriptor[] = {
 	&dev_attr_physical_memory_resourse_count.attr,
 	&dev_attr_context_capabilities.attr,
 	&dev_attr_large_unit_granularity.attr,
-	&dev_attr_wb_buf_alloc_units.attr,
 	NULL,
 };
 

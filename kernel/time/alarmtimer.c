@@ -106,6 +106,9 @@ static int alarmtimer_rtc_add_device(struct device *dev,
 	struct wakeup_source *__ws;
 	int ret = 0;
 
+	if (rtcdev)
+		return -EBUSY;
+
 	if (!rtc->ops->set_alarm)
 		return -1;
 
@@ -322,7 +325,7 @@ static int alarmtimer_suspend(struct device *dev)
 	/* Set alarm, if in the past reject suspend briefly to handle */
 	ret = rtc_timer_start(rtc, &rtctimer, now, 0);
 	if (ret < 0)
-		__pm_wakeup_event(ws, MSEC_PER_SEC / 2);
+ 		__pm_wakeup_event(ws, MSEC_PER_SEC / 2);
 	return ret;
 }
 
