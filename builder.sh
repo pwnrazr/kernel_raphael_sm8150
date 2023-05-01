@@ -333,6 +333,3 @@ function completion()
 parse_parameters "${@}"
 make_image
 cd ${kernel_dir}
-if [ ${BUILD_KSU} == true ]; then
-	git restore arch/arm64/configs/raphael_defconfig
-fi
