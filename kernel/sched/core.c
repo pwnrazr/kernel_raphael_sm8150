@@ -32,7 +32,8 @@
 #include <linux/delay.h>
 
 #include <linux/kthread.h>
-#include <linux/event_tracking.h>
+#include <linux/cpu_input_boost.h>
+#include <linux/devfreq_boost.h>
 
 #include <asm/switch_to.h>
 #include <asm/tlb.h>
