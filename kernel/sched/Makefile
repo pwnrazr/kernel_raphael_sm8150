@@ -21,6 +21,7 @@ ccflags-y += -mllvm -inline-threshold=15000
 ccflags-y += -mllvm -inlinehint-threshold=10000
 
 KBUILD_CFLAGS += -Wno-void-pointer-to-int-cast
+KBUILD_CFLAGS += -Wno-incompatible-function-pointer-types
 
 obj-y += core.o loadavg.o clock.o cputime.o
 obj-y += idle_task.o fair.o rt.o deadline.o
