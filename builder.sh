@@ -18,7 +18,7 @@ TARGET_IMAGE="Image.gz-dtb"
 TARGET_DTBO="dtbo.img"
 
 # Toolchains
-CLANG_VERSION="clang-r510928" # https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+/refs/heads/main/clang-r510928/
+CLANG_VERSION="clang-r522817" # https://gitlab.com/yaosp/prebuilts_clang_host_linux-x86/-/tree/04d8c52964320863704da7a64c419c8ebea163a7/clang-r522817
 CLANG_LOC="/home/pwnrazr/dev-stuff/${CLANG_VERSION}"
 CLANG="${CLANG_LOC}/bin:$PATH"
 CT_BIN="${CLANG}/bin/"
