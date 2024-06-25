@@ -529,7 +529,7 @@ end:
 	 */
 	if (idx > idx0 &&
 	    drv->states[idx].target_residency > ktime_to_us(delta_tick))
-		idx = teo_find_shallower_state(drv, dev, idx, ktime_to_us(delta_tick), false);
+		idx = teo_find_shallower_state(drv, dev, idx, ktime_to_us(delta_tick));
 
 out_tick:
 	*stop_tick = false;
