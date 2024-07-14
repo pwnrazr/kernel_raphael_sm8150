@@ -10,7 +10,7 @@ kernel_dir="${PWD}"
 builddir="${kernel_dir}/Zip-out"
 last_commit=$(git rev-parse --verify --short=10 HEAD)
 kVersion="-${last_commit}"
-CUSTOM_ZIP_OUT_LOC="/mnt/phone_share/" # Unset if don't want to copy output zip to anywhere else
+CUSTOM_ZIP_OUT_LOC="/mnt/syncthing-nfs/Phone Share/" # Unset if don't want to copy output zip to anywhere else
 
 # Arch and target image
 export ARCH="arm64"
@@ -19,7 +19,7 @@ TARGET_DTBO="dtbo.img"
 
 # Toolchains
 CLANG_VERSION="clang-r522817" # https://gitlab.com/yaosp/prebuilts_clang_host_linux-x86/-/tree/04d8c52964320863704da7a64c419c8ebea163a7/clang-r522817
-CLANG_LOC="/home/pwnrazr/dev-stuff/${CLANG_VERSION}"
+CLANG_LOC="${kernel_dir}/../${CLANG_VERSION}"
 CLANG="${CLANG_LOC}/bin:$PATH"
 CT_BIN="${CLANG}/bin/"
 CT="${CT_BIN}/clang"
@@ -313,7 +313,7 @@ function completion()
 		mv ${builddir}/anykernel/"${ZIP_NAME}.zip" ${builddir}/
 
 		if [[ ${CUSTOM_ZIP_OUT_LOC} != "" ]]; then
-			cp ${builddir}/"${ZIP_NAME}.zip" ${CUSTOM_ZIP_OUT_LOC}
+			cp ${builddir}/"${ZIP_NAME}.zip" "${CUSTOM_ZIP_OUT_LOC}"
 		fi
 
 		print ${LGR} "(i)Flashable zip generated under $builddir"
