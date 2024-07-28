@@ -5,12 +5,17 @@
 # Copyright (C) 2022 Luan Halaiko (LuHaKo)
 # Based on YaroST12 script
 
+source .custom_config
+
 # Build Information and directories
 kernel_dir="${PWD}"
 builddir="${kernel_dir}/Zip-out"
 last_commit=$(git rev-parse --verify --short=10 HEAD)
 kVersion="-${last_commit}"
-CUSTOM_ZIP_OUT_LOC="/mnt/syncthing-nfs/Phone Share/" # Unset if don't want to copy output zip to anywhere else
+
+if [ -z "${CUSTOM_ZIP_OUT_LOC}" ]; then	# Set CUSTOM_ZIP_OUT_LOC in .custom_config
+	CUSTOM_ZIP_OUT_LOC=${PWD}
+fi
 
 # Arch and target image
 export ARCH="arm64"
